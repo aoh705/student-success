@@ -1,0 +1,764 @@
+---
+title: "Oh_Project"
+author: "A.Oh"
+date: '2022-04-04'
+output: html_document
+---
+Purpose of Project:
+The purpose of my project is to draw summary statistics and observational conclusions from my datasets to establish data points that will be further analyzed in Part II of this project. The datasets analyzed are NELS.sav and NELS.xlsx. It is in order to 
+
+The first step is to read the datasets. In order to do so, I need to download the "haven" and "readxl" package to read the .sav and .xlsx files for the NELS files I chose.
+```{r}
+library("haven")
+
+library("readxl")
+
+```
+
+I would like to read the .sav file to see how it is structured.
+```{r}
+nels1 <- read_sav('Data/NELS.sav')
+head(nels1)
+```
+I am inserting the .xslx file to read to see if there are any differences in variable expression so that I can use the dataset that offers me the best data to analyze against each other.
+```{r}
+nels2 <- read_excel('Data/NELS.xlsx')
+head(nels2)
+```
+Looking at both datasets (.sav and .xlsx), I observe that the .sav file provides better column names to reference while analyzing the dataset. While they are acronyms of the question presented, they are shorter and better to code with while the excel names are self-explanatory, they are too long to code. However, I will be referencing the excel file to understand the column names in the .sav file.
+
+Below, I am using this code to change the name of the dataset from nels2 to nels to access it easier in future code.
+```{r}
+#changing dataset name to nels to access it easier
+nels <- nels2
+
+```
+
+I will be analyzing my first variable, which is the socio-economic status of each individual (or ID/case number). To draw some helpful summary statistics and exploratory analysis, I will be making a subset table, a histogram, and a boxplot.
+```{r}
+#installing tidyverse, ggplot, magrittr, and dplyr
+library(tidyverse)
+library(ggplot2)
+library(magrittr)
+library(dplyr)
+
+#using a for loop and if/else statement to check if column has any rows with values that do not pertain to the data that needs to be presented (i.e. NA or "missing")
+col_ses <- nels$`Socio-Economic Status`
+missing_ses <- c()
+approve_ses <- c()
+
+for(col in seq_along(col_ses)){
+  is_missing <- col_ses[col] == "Missing"
+  is_none <- col_ses[col] == "None"
+  if(is.na(col) || is_missing == TRUE || is_none == TRUE){
+    missing_ses <- c(missing_ses, "YES")
+  }
+  else{
+    approve_ses <- c(approve_ses, "NO")
+  }
+}
+
+length(missing_ses)
+length(approve_ses)
+
+#this code above shows that I do not need to filter out any values with unappropriate values
+
+#creating a table for socioeconomic status of each individual
+table_socecon <- nels[,c("Case Number", "Socio-Economic Status")]
+print(table_socecon)
+
+#to make coding easier, I set a variable for the ggplot() part of graphing the variable
+basic_ses <- ggplot(nels,aes(`Socio-Economic Status`))
+
+#creating a histogram for socioeconomic status
+basic_ses + geom_histogram(binwidth = 0.5, colour = "purple", fill = "purple", bins = 2) + ggtitle("Socio-Economic Status")
+#the curve of the histogram minimally changed when I changed the binwidth, so I used 0.5 to make the data easier to look at, especially with the gaps between the bars
+
+#creating a boxplot for socioeconomic status
+basic_ses + geom_boxplot(fill = "purple", outlier.colour="black", outlier.shape=16, outlier.size=2, notch=FALSE) + ggtitle("Socio-Economic Status")
+
+#presenting the summary statistics of socioeconomic status for each individual
+summary(nels$`Socio-Economic Status`)
+
+```
+
+I will be analyzing my second variable, which is the family size for each case number. To draw some helpful summary statistics and exploratory analysis, I will be making a subset table, a histogram, and a boxplot.
+```{r}
+#creating a table for family size of each individual
+famsize <- nels%>%
+            select(`Case Number`,`Family Size`)
+print(famsize)
+
+#checking if the variable data has any values that are not related to the data collected
+col_fams <- nels$`Family Size`
+missing_fams <- c()
+approve_fams <- c()
+
+for(col in seq_along(col_fams)){
+  is_missing <- col_fams[col] == "Missing"
+  is_none <- col_fams[col] == "None"
+  if(is.na(col_fams[col]) || is_missing == TRUE || is_none == TRUE){
+    missing_fams <- c(missing_fams, "YES")
+  }
+  else{
+    approve_fams <- c(approve_fams, "NO")
+  }
+}
+
+length(missing_fams)
+length(approve_fams)
+
+#to make coding easier, I set a variable for the ggplot() part of graphing the variable
+basic_fams <- ggplot(nels,aes(`Family Size`))
+
+#creating a histogram for family size
+basic_fams + geom_histogram(binwidth = 1, colour = "white", fill = "blue") + ggtitle("Histogram of Family Size for Each Individual")
+
+#creating a boxplot for family size
+basic_fams + geom_boxplot(fill = "blue", outlier.colour="black", outlier.shape=16, outlier.size=2, notch=FALSE) + ggtitle("Boxplot of Family Size for Each Individual")
+
+#presenting the summary statistics of family size
+summary(nels$`Family Size`)
+
+#presenting the summary statistics
+summary_fam <- nels %>%
+  group_by(`Family Size`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_fam)
+
+```
+
+For my third variable, I will be looking at urbanicity. I will be using urbanicity, family size, and socioeconomic status to create a scatterplot to possibly look at the correlation between the two variables addtionally in making a stacked histogram for urbanicity and socioeconomic status.
+```{r}
+#creating a table for family size, socioeconomic status, and urbanicity of each individual
+table_sesfams <- nels[,c("Case Number","Family Size","Socio-Economic Status","Urbanicity")]
+print(table_sesfams)
+
+#create a bar graph for the urbanicity
+ggplot(nels,aes(`Urbanicity`)) + geom_bar(colour = "seagreen3", fill = "seagreen3") + ggtitle("Count of Different Regions of Individuals")
+
+#create a stacked bar graph for socioeconomic status reflected on urbanicity
+ggplot(nels,aes(`Socio-Economic Status`,fill = `Urbanicity`)) + geom_bar() + ggtitle("Allocations of Different Regions of Individuals depending on Socioeconomic Status")
+
+#create a scatterplot for these columns
+ggplot(data=nels) + geom_point(mapping = aes(x = `Family Size`, y = `Socio-Economic Status`, color = `Urbanicity`)) + ggtitle("Vertical Distribution Among Urbanicity, Family Size, and Socio-economic Status")
+
+#create the same scatterplot but the x and y axis switched to see which one works better
+ggplot(data=nels) + geom_point(mapping = aes(x = `Socio-Economic Status`, y = `Family Size`, color = `Urbanicity`)) + ggtitle("Horizontal Distribution Among Urbanicity, Family Size, and Socio-Economic Status")
+
+#presenting the summary statistics
+summary_u <- nels %>%
+  group_by(`Urbanicity`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_u)
+
+#create a 2x2 table for the subset
+urb <- table(nels$Urbanicity,nels$`Family Size`)
+addmargins(urb)
+round(100*prop.table(urb,2))
+
+urb <- table(nels$Urbanicity,nels$`Family Size`)
+addmargins(urb)
+round(100*prop.table(urb,1))
+
+socu <- table(nels$`Socio-Economic Status`,nels$Urbanicity)
+addmargins(socu)
+round(100*prop.table(socu,2))
+
+
+```
+
+I will be analyzing my fourth variable, which is the time spent on homework out of school weekly for each case number. To draw some helpful summary statistics and exploratory analysis, I will be making a barplot and a boxplot.
+```{r}
+#checking if the variable data has any values that are not related to the data collected
+col_hwt <- nels$`Time Spent on Homework out of School per Week in Twelfth Grade`
+missing_hwt <- c()
+approve_hwt <- c()
+
+for(col in seq_along(col_hwt)){
+  is_missing <- col_hwt[col] == "Missing"
+  is_none <- col_hwt[col] == "None"
+  if(is.na(col_hwt[col]) || is_missing == TRUE || is_none == TRUE){
+    missing_hwt <- c(missing_hwt, "YES")
+  }
+  else{
+    approve_hwt <- c(approve_hwt, "NO")
+  }
+}
+
+length(missing_hwt)
+length(approve_hwt)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+hwtime <- nels%>%
+            select(`Case Number`,`Time Spent on Homework out of School per Week in Twelfth Grade`) %>%
+            filter(`Time Spent on Homework out of School per Week in Twelfth Grade` != "None")
+print(hwtime)
+
+#to make coding easier, I set a variable for the ggplot() part of graphing the variable
+basic_hw <- ggplot(hwtime,aes(`Time Spent on Homework out of School per Week in Twelfth Grade`))
+
+#creating a barplot for time spent on homework
+basic_hw + geom_bar(colour = "pink", fill = "pink") + scale_x_discrete(guide = guide_axis(n.dodge=2)) + ggtitle("Distribution of Time on Homework Per Week in Twelfth Grade")
+
+#presenting the summary statistics for time spent on homework out of school weekly for each individual
+summary <- hwtime %>%
+  group_by(`Time Spent on Homework out of School per Week in Twelfth Grade`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary)
+```
+
+I will be analyzing my fifth variable, which is the grades for each subject for each case number in twelfth grade. To draw some helpful summary statistics and exploratory analysis, I will be making a histogram.
+```{r}
+#creating a table for grade of each subject of each individual in twelfth grade
+table_reading <- nels[,c("Case Number", "Reading Achievement in Twelfth Grade")]
+table_math <- nels[,c("Case Number", "Math Achievement in Twelfth Grade")]
+table_science <- nels[,c("Case Number", "Science Achievement in Twelfth Grade")]
+table_ss <- nels[,c("Case Number", "Social Studies Achievement in Twelfth Grade")]
+
+#creating a histogram for each subject
+ggplot(nels,aes(`Reading Achievement in Twelfth Grade`)) + geom_histogram(binwidth = 1, colour = "white", fill = "red") + ggtitle("Distribution of Reading Achievement in Twelfth Grade")
+
+ggplot(nels,aes(`Math Achievement in Twelfth Grade`)) + geom_histogram(binwidth = 1, colour = "white", fill = "light blue") + ggtitle("Distribution of Math Achievement in Twelfth Grade")
+
+ggplot(nels,aes(`Science Achievement in Twelfth Grade`)) + geom_histogram(binwidth = 1, colour = "white", fill = "green") + ggtitle("Distribution of Science Achievement in Twelfth Grade")
+
+ggplot(nels,aes(`Social Studies Achievement in Twelfth Grade`)) + geom_histogram(binwidth = 1, colour = "white", fill = "orange") + ggtitle("Distribution of Social Studies Achievement in Twelfth Grade")
+
+#presenting the summary statistics of each subject
+summary(nels$`Reading Achievement in Twelfth Grade`)
+summary(nels$`Math Achievement in Twelfth Grade`)
+summary(nels$`Science Achievement in Twelfth Grade`)
+summary(nels$`Social Studies Achievement in Twelfth Grade`)
+
+#creating a boxplot for each subject
+ggplot(nels,aes(`Reading Achievement in Twelfth Grade`)) + geom_boxplot(fill = "red") + ggtitle("Distribution of Reading Achievement in Twelfth Grade")
+
+ggplot(nels,aes(`Math Achievement in Twelfth Grade`)) + geom_boxplot(fill = "light blue") + ggtitle("Distribution of Math Achievement in Twelfth Grade")
+
+ggplot(nels,aes(`Science Achievement in Twelfth Grade`)) + geom_boxplot(fill = "green") + ggtitle("Distribution of Science Achievement in Twelfth Grade")
+
+ggplot(nels,aes(`Social Studies Achievement in Twelfth Grade`)) + geom_boxplot(fill = "orange") + ggtitle("Distribution of Social Studies Achievement in Twelfth Grade")
+
+```
+
+Looking at the graphs presented for the previous two variables, I wish to see the correlation between time spent on homework and grade achieved in each subject. I will do so by using the geom_point function and stacking the histogram and bargraph.
+```{r}
+table_grades <- nels[,c("Case Number","Time Spent on Homework out of School per Week in Twelfth Grade","Reading Achievement in Twelfth Grade","Math Achievement in Twelfth Grade","Science Achievement in Twelfth Grade","Social Studies Achievement in Twelfth Grade")]
+print(table_grades)
+
+#create a scatterplot for these columns
+ggplot(data=nels) + geom_point(mapping = aes(x = `Time Spent on Homework out of School per Week in Twelfth Grade`, y = `Reading Achievement in Twelfth Grade`, color = `Socio-Economic Status`)) + scale_x_discrete(guide = guide_axis(n.dodge=2))
+
+ggplot(data=nels) + geom_point(mapping = aes(x = `Time Spent on Homework out of School per Week in Twelfth Grade`, y = `Math Achievement in Twelfth Grade`, color = `Socio-Economic Status`)) + scale_x_discrete(guide = guide_axis(n.dodge=2))
+
+ggplot(data=nels) + geom_point(mapping = aes(x = `Time Spent on Homework out of School per Week in Twelfth Grade`, y = `Science Achievement in Twelfth Grade`, color = `Socio-Economic Status`)) + scale_x_discrete(guide = guide_axis(n.dodge=2))
+
+ggplot(data=nels) + geom_point(mapping = aes(x = `Time Spent on Homework out of School per Week in Twelfth Grade`, y = `Social Studies Achievement in Twelfth Grade`, color = `Socio-Economic Status`)) + scale_x_discrete(guide = guide_axis(n.dodge=2))
+
+#create a separate subset table for all columns studied here
+grades_time <- nels%>%
+            select(`Case Number`,`Time Spent on Homework out of School per Week in Twelfth Grade`,`Reading Achievement in Twelfth Grade`,`Math Achievement in Twelfth Grade`,`Science Achievement in Twelfth Grade`,`Social Studies Achievement in Twelfth Grade`) %>%
+            filter(`Time Spent on Homework out of School per Week in Twelfth Grade` != "None")
+print(grades_time)
+
+#using a stacked histogram within a bargraph
+ggplot(grades_time,aes(`Reading Achievement in Twelfth Grade`,fill = `Time Spent on Homework out of School per Week in Twelfth Grade`)) + geom_histogram(binwidth = 10, colour = "white") + ggtitle("Allocations of Time Spent on Homework per Week outside of School depending on Reading Achievement") + theme(plot.title=element_text(size=9))
+
+ggplot(grades_time,aes(`Math Achievement in Twelfth Grade`,fill = `Time Spent on Homework out of School per Week in Twelfth Grade`)) + geom_histogram(binwidth = 10, colour = "white") + ggtitle("Allocations of Time Spent on Homework per Week outside of School depending on Math Achievement") + theme(plot.title=element_text(size=9))
+
+ggplot(grades_time,aes(`Science Achievement in Twelfth Grade`,fill = `Time Spent on Homework out of School per Week in Twelfth Grade`)) + geom_histogram(binwidth = 10, colour = "white") + ggtitle("Allocations of Time Spent on Homework per Week outside of School depending on Science Achievement") + theme(plot.title=element_text(size=9))
+
+ggplot(grades_time,aes(`Social Studies Achievement in Twelfth Grade`, fill = `Time Spent on Homework out of School per Week in Twelfth Grade`)) + geom_histogram(binwidth = 10, colour = "white") + ggtitle("Allocations of Time Spent on Homework per Week outside of School depending on Social Studies Achievement") + theme(axis.title=element_text(size=8)) + theme(plot.title=element_text(size=9))
+
+```
+
+I will be analyzing my sixth variable, which is the frequency of AP courses offered for each region. To draw some helpful summary statistics and exploratory analysis, I will be making a scatterplot.
+```{r}
+#checking if the variable data has any values that are not related to the data collected
+col_ap <- nels$`Number of Advanced Placement Courses Offered by School`
+missing_ap <- c()
+approve_ap <- c()
+
+for(col in seq_along(col_ap)){
+  is_missing <- col_ap[col] == "Missing"
+  is_none <- col_ap[col] == "None"
+  if(is.na(col_ap[col]) || is_missing == TRUE || is_none == TRUE){
+    missing_ap <- c(missing_ap, "YES")
+  }
+  else{
+    approve_ap <- c(approve_ap, "NO")
+  }
+}
+
+length(missing_ap)
+length(approve_ap)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+apf <- nels%>%
+            select(`Case Number`,`Number of Advanced Placement Courses Offered by School`,`Geographic Region of School`,Urbanicity) %>%
+            filter(`Number of Advanced Placement Courses Offered by School` != "Missing")
+print(apf)
+
+#to make coding easier, I set a variable for the ggplot() part of graphing the variable
+basic_region <- ggplot(apf,aes(`Geographic Region of School`))
+basic_ap <- ggplot(apf,aes(`Number of Advanced Placement Courses Offered by School`))
+
+#creating a barplot for geographic region
+basic_region + geom_bar(colour = "gold", fill = "gold") + ggtitle("Count of Geographic Regions")
+
+#creating a barplot for number of advanced placement courses
+basic_ap + geom_bar(colour = "orange", fill = "orange") + scale_x_discrete(guide = guide_axis(n.dodge=2)) + ggtitle("Distribution of AP Programs")
+
+#create a stacked histogram to see the different distributions of number of AP courses taught in schools in different regions
+ggplot(apf,aes(`Number of Advanced Placement Courses Offered by School`,fill = `Geographic Region of School`)) + geom_bar() + scale_x_discrete(guide = guide_axis(n.dodge=2)) + ggtitle("Allocations of Geographic Regions based on Distribution of AP Programs")
+
+ggplot(apf,aes(`Number of Advanced Placement Courses Offered by School`,fill = Urbanicity)) + geom_bar() + scale_x_discrete(guide = guide_axis(n.dodge=2)) + ggtitle("Allocations of Urbanicity based on Distribution of AP Programs") + theme(plot.title=element_text(size=12))
+
+#presenting the summary statistics
+summary_t <- apf %>%
+  group_by(`Number of Advanced Placement Courses Offered by School`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_t)
+
+summary_g <- apf %>%
+  group_by(`Geographic Region of School`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_g)
+
+#create a 2x2 table for the subset
+apgeo <- table(apf$`Number of Advanced Placement Courses Offered by School`,apf$`Geographic Region of School`)
+print(apgeo)
+addmargins(apgeo)
+round(100*prop.table(apgeo,1))
+
+geog <- table(nels$`Geographic Region of School`,nels$Urbanicity)
+addmargins(geog)
+round(100*prop.table(geog,1))
+
+```
+
+I will be analyzing my seventh variable, which is average number of times students missed school and the married status of their parents. To do this, I will be creating separate graphs for married status and number of times missed school.
+```{r}
+
+library(dplyr)
+
+#checking if the variable data has any values that are not related to the data collected
+col_mart <- nels$`Parents' Marital Status in Eighth Grade`
+missing_mart <- c()
+approve_mart <- c()
+
+for(col in seq_along(col_mart)){
+  is_missing <- col_mart[col] == "Missing"
+  is_none <- col_mart[col] == "None"
+  is_num <- col_mart[col] == "98.0"
+  if(is.na(col_ap[col]) || is_missing == TRUE || is_none == TRUE || is_num == TRUE){
+    missing_mart <- c(missing_mart, "YES")
+  }
+  else{
+    approve_mart <- c(approve_mart, "NO")
+  }
+}
+
+length(missing_mart)
+length(approve_mart)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+marital <- nels%>%
+            select(`Case Number`,`Parents' Marital Status in Eighth Grade`, `Number of Times Missed School in Twelfth Grade`) %>%
+            filter(`Parents' Marital Status in Eighth Grade` != "98.0")
+print(marital)
+
+#create vectors that lists the married status of the parents using the for() loop and if/else statement to figure out the number of married parents vs. divorced parents.
+target_ms <- marital$`Parents' Marital Status in Eighth Grade`
+married <- c()
+divorced <- c()
+other <- c()
+
+#use the unique() function to understand the unique values that define the different marital statuses of the parents
+unique(marital$`Parents' Marital Status in Eighth Grade`)
+
+for(i in target_ms){
+  if(i == "Married"){
+    married <- c(married, i)
+  }
+  if(i == "Divorced"){
+    divorced <- c(divorced,i)
+  }
+  if(i == "Widowed" || i == "Separated" || i == "Never Married" || i == "Marriage-Like Relationship"){
+    other <- c(other,i)
+  }
+}
+
+num_m <- length(married)
+num_d <- length(divorced)
+num_o <- length(other)
+
+print(paste(num_m , " pair of married parents."))
+print(paste(num_d , " pair of divorced parents."))
+print(paste(num_o , " other results."))
+
+#creating the appropriate graph for the different distributions of the number of times students missed school depending on the marital status of their parents and the school type everyone had in eighth grade
+table_skipms <- marital[,c("Case Number","Parents' Marital Status in Eighth Grade","Number of Times Missed School in Twelfth Grade")]
+
+ggplot(marital,aes(`Parents' Marital Status in Eighth Grade`)) + geom_bar(colour = "white", fill = "purple") + ggtitle("Count of Marital Status of Parents")
+
+ggplot(marital,aes(`Number of Times Missed School in Twelfth Grade`)) + geom_bar(colour = "white", fill = "blue") + ggtitle("Count of Missed School")
+
+#create a 2x2 table for the subset
+martn <- table(marital$`Parents' Marital Status in Eighth Grade`,marital$`Number of Times Missed School in Twelfth Grade`)
+addmargins(martn)
+round(100*prop.table(martn,2))
+
+```
+
+I will be analyzing my eighth variable, which is taking advanced math in eighth grade and smoking cigarettes. To do this, I will be creating a graph that shows the people who smoke cigarettes and the frequency they took advanced math in eighth grade.
+```{r}
+#checking if the variable data has any values that are not related to the data collected for taking advanced math in eighth grade
+col_adm <- nels$`Advanced Math Taken in Eighth Grade`
+missing_adm <- c()
+approve_adm <- c()
+
+for(col in seq_along(col_adm)){
+  is_missing <- col_adm[col] == "Missing"
+  is_none <- col_adm[col] == "None"
+  is_num <- col_adm[col] == "98.0"
+  if(is.na(col_adm[col]) || is_missing == TRUE || is_none == TRUE || is_num == TRUE){
+    missing_adm <- c(missing_adm, "YES")
+  }
+  else{
+    approve_adm <- c(approve_adm, "NO")
+  }
+}
+
+length(missing_adm)
+length(approve_adm)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+adsm <- nels%>%
+            select(`Case Number`,`Advanced Math Taken in Eighth Grade`, `Smoked Cigarettes Ever?`) %>%
+            filter(`Advanced Math Taken in Eighth Grade` != "Missing")
+print(adsm)
+
+target_advm1 <- nels$`Advanced Math Taken in Eighth Grade` == "Yes"
+indiv_advm <- nels[target_advm1,]
+indiv_ad <- indiv_advm[,"Smoked Cigarettes Ever?"]
+target_smoke <- indiv_advm$`Smoked Cigarettes Ever?` == "Never"
+table_smokem <- indiv_advm[target_smoke,]
+print(table_smokem)
+
+target_advm2 <- nels$`Advanced Math Taken in Eighth Grade` == "No"
+indiv_advm2 <- nels[target_advm2,]
+indiv_ad2 <- indiv_advm2[,"Smoked Cigarettes Ever?"]
+target_smoke2 <- indiv_advm2$`Smoked Cigarettes Ever?` == "Yes"
+table_smokem2 <- indiv_advm2[target_smoke2,]
+print(table_smokem2)
+
+target_advm3 <- nels$`Advanced Math Taken in Eighth Grade` == "No"
+indiv_advm3 <- nels[target_advm3,]
+indiv_ad3 <- indiv_advm3[,"Smoked Cigarettes Ever?"]
+target_smoke3 <- indiv_advm3$`Smoked Cigarettes Ever?` == "Never"
+table_smokem3 <- indiv_advm3[target_smoke3,]
+print(table_smokem3)
+
+target_advm4 <- nels$`Advanced Math Taken in Eighth Grade` == "Yes"
+indiv_advm4 <- nels[target_advm3,]
+indiv_ad4 <- indiv_advm4[,"Smoked Cigarettes Ever?"]
+target_smoke4 <- indiv_advm4$`Smoked Cigarettes Ever?` == "Yes"
+table_smokem4 <- indiv_advm4[target_smoke4,]
+print(table_smokem4)
+
+#create a bargraph for those who have taken advanced math and those who have smoked cigarettes
+ggplot(adsm,aes(`Advanced Math Taken in Eighth Grade`)) + geom_bar(colour = "white", fill = "orange") + ggtitle("Count of Taking Advanced Math in Eighth Grade")
+
+ggplot(adsm,aes(`Smoked Cigarettes Ever?`)) + geom_bar(colour = "white", fill = "pink") + ggtitle("Count of Individuals who have Smoked Cigarettes")
+
+ggplot(adsm, aes(`Smoked Cigarettes Ever?`, fill = `Advanced Math Taken in Eighth Grade`)) + geom_bar() + ggtitle("Smoking Cigarettes and Taking Advanced Math")
+
+#presenting the summary statistics
+summary_adm <- adsm %>%
+  group_by(`Advanced Math Taken in Eighth Grade`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_adm)
+
+summary_sm <- adsm %>%
+  group_by(`Smoked Cigarettes Ever?`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_sm)
+
+#create a 2x2 table for the subset
+admsm <- table(adsm$`Advanced Math Taken in Eighth Grade`,adsm$`Smoked Cigarettes Ever?`)
+addmargins(admsm)
+round(100*prop.table(admsm,2))
+
+```
+
+I will be analyzing my ninth variable, which is expected income. To do this, I will be creating a graph that shows the histogram of expected income.
+```{r}
+#creating a new dataframe/subset table for expected income
+nels_expinc <- data.frame(nels$`Case Number`, nels$`Expected income at age 30`)
+print(nels_expinc)
+
+#using function() to divide all expected income values by 1000 in order to provide a more realistic sense of how much income they expect (not in larger numbers)
+divide <- function(income){
+  new_inc <- income/1000
+  return(new_inc)
+}
+
+#use a for loop to enact the function defined above
+target_inc <- nels$`Expected income at age 30`
+
+New_Expected_income_at_age_30 <- c()
+
+for(i in target_inc){
+  small_inc <- divide(i)
+  New_Expected_income_at_age_30 <- c(New_Expected_income_at_age_30,small_inc)
+}
+
+nels$New_Expected_income_at_age_30 <- New_Expected_income_at_age_30
+
+#creating a histogram for expected income, for both columns (New Expected income and Expected Income)
+ggplot(nels,aes(New_Expected_income_at_age_30)) + geom_histogram(colour = "white", fill = "light blue", bins = 75) + ggtitle("Expected Income at Age 30 with Smaller Values")
+
+ggplot(nels,aes(`Expected income at age 30`)) + geom_histogram(colour = "white", fill = "orange", bins = 100) + ggtitle("Expected Income at Age 30 with Original Data")
+
+#using the summary() function to find the summary statistics of the expected income at age 30
+summary(nels$`Expected income at age 30`)
+
+#calculating the outlier for this dataset
+q1 <- 30000
+q3 <- 50000
+iqr <- q3-q1
+lower_outlier <- q1 - 1.5*(iqr)
+upper_outlier <- q3 + 1.5*(iqr)
+print(lower_outlier)
+print(upper_outlier)
+
+no_outlier_expected_income_30 <- c()
+no_outlier_case_num <- c()
+
+case_num <- nels$`Case Number`
+soc <- nels$`Socio-Economic Status`
+alc <- nels$`Binged on Alcohol Ever?`
+
+#we also include expected income at age 30 for the next part, where I use a stacked histogram with expected income at age 30
+high_ed <- nels$`Highest level of education expected`
+no_outlier_highed <- c()
+new_socecon <- c()
+new_alc <- c()
+
+for(i in seq_along(target_inc)){
+  if(target_inc[i] >= lower_outlier && target_inc[i] <= upper_outlier){
+    no_outlier_expected_income_30 <- c(no_outlier_expected_income_30,target_inc[i])
+    no_outlier_case_num <- c(no_outlier_case_num,case_num[i])
+    no_outlier_highed <- c(no_outlier_highed,high_ed[i])
+    new_socecon <- c(new_socecon,soc[i])
+    new_alc <- c(new_alc,alc[i])
+  }
+}
+
+new_nels <- data.frame(no_outlier_case_num,no_outlier_expected_income_30,no_outlier_highed,new_socecon,new_alc)
+head(new_nels)
+
+#creating a histogram and boxplot using this new column
+ggplot(new_nels,aes(no_outlier_expected_income_30)) + geom_histogram(colour = "white", fill = "red", bins = 30) + ggtitle("Expected Income at Age 30 without outiers")
+
+ggplot(new_nels,aes(no_outlier_expected_income_30)) + geom_boxplot(fill = "darkorange") + ggtitle("Expected Income at Age 30 without outliers")
+
+```
+
+I'd like to explore the relationship between expected income by 30 and the highest level of education expected to be received. To do this, I will graph the expected income graph the same way as above and create a histogram that breaks down each expected income bar with the different levels of education expectd to be reached.
+```{r}
+#This code is a copy from the block of code above
+ggplot(new_nels,aes(no_outlier_expected_income_30)) + geom_histogram(colour = "white", fill = "red") + ggtitle("Expected Income at Age 30 without outiers")
+
+#create a subset of data for the highest level of education expected using built-in R function
+table_ed <- nels[,c("Case Number","Highest level of education expected")]
+print(table_ed)
+
+#creating a bargraph that shows a possible correlation between expected income by age 30 and the highest level of education they expect to receive
+ggplot(new_nels,aes(no_outlier_expected_income_30,fill = no_outlier_highed)) + geom_histogram(colour = "white") + ggtitle("Distribution of Higher Edcuation in Different Incomes Expected")
+
+#create a 2x2 table for the subset
+inced <- table(new_nels$no_outlier_expected_income_30, new_nels$no_outlier_highed)
+addmargins(inced)
+round(100*prop.table(inced,1))
+
+```
+
+I will be analyzing my tenth variable, which is the hours spent on extracurricular activities in twelfth grade and highest education expected. To do this, I will be creating a graph that shows the barplot of time spent on extracurricular activities and highest education expected.
+```{r}
+#checking if the variable data has any values that are not related to the data
+col_ec <- nels$`Time Spent Weekly on Extra-Curricular Activities in Twelfth Grade`
+missing_ec <- c()
+approve_ec <- c()
+
+for(col in seq_along(col_ec)){
+  is_missing <- col_ec[col] == "Missing"
+  is_none <- col_ec[col] == "None"
+  is_num <- col_ec[col] == "98.0"
+  if(is.na(col_ec[col]) || is_missing == TRUE || is_none == TRUE || is_num == TRUE){
+    missing_ec <- c(missing_ec, "YES")
+  }
+  else{
+    approve_ec <- c(approve_ec, "NO")
+  }
+}
+
+length(missing_ec)
+length(approve_ec)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+eced <- nels%>%
+            select(`Case Number`,`Time Spent Weekly on Extra-Curricular Activities in Twelfth Grade`, `Highest level of education expected`) %>%
+            filter(`Time Spent Weekly on Extra-Curricular Activities in Twelfth Grade` != "None")
+print(eced)
+
+#creating a bargraph for hours spent on extracurricular activites
+ggplot(eced,aes(`Time Spent Weekly on Extra-Curricular Activities in Twelfth Grade`)) + geom_bar(colour = "white", fill = "pink") + ggtitle("Count of Time Spent on Extra-Curricular Activities in Twelfth Grade")
+
+#creating a bargraph for highest level of education expected
+ggplot(eced,aes(`Highest level of education expected`)) + geom_bar(colour = "white", fill = "light blue") + ggtitle("Count of the Highest Level Education Expected")
+
+#creating a bargraph that shows a possible correlation between the number hours spent on extracurricular activities and the level of education they expect to receive
+ggplot(eced,aes(`Time Spent Weekly on Extra-Curricular Activities in Twelfth Grade`,fill = `Highest level of education expected`)) + geom_bar() + scale_x_discrete(guide = guide_axis(n.dodge=2)) + ggtitle("Distribution of Highest Edcuation Expected to Time Spent on Activities")
+
+#presenting the summary statistics
+summary_tim <- eced %>%
+  group_by(eced$`Time Spent Weekly on Extra-Curricular Activities in Twelfth Grade`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_tim)
+
+summary_hed <- eced %>%
+  group_by(eced$`Highest level of education expected`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_hed)
+
+#create a 2x2 table for the subset
+timed <- table(eced$`Time Spent Weekly on Extra-Curricular Activities in Twelfth Grade`,eced$`Highest level of education expected`)
+addmargins(timed)
+round(100*prop.table(timed,1))
+
+timed2 <- table(eced$`Time Spent Weekly on Extra-Curricular Activities in Twelfth Grade`,eced$`Highest level of education expected`)
+addmargins(timed2)
+round(100*prop.table(timed2,2))
+
+```
+
+I will be analyzing my eleventh variable, which is the different types of schools individuals attend both in high school and eighth grade. To do this, I will be creating a graph that shows the barplot of the types of schools individuals attend.
+```{r}
+#create a subset of data using built-in R function
+table_school <- nels[,c("Case Number","Type of High School Program","School Type in Eighth Grade")]
+print(table_school)
+
+#creating a bargraph for type of high school program and school type in eighth grade
+ggplot(nels,aes(`Type of High School Program`)) + geom_bar(colour = "white", fill = "indianred3") + ggtitle("Count of High School Program")
+
+ggplot(nels,aes(`School Type in Eighth Grade`)) + geom_bar(colour = "white", fill = "darkseagreen2") + ggtitle("Count of Eighth Grade Program")
+
+#creating a bargraph that shows the breakdown of individuals who went to a certain type of school in eighth grade leading to their high school program
+ggplot(nels,aes(`Type of High School Program`,fill = `School Type in Eighth Grade`)) + geom_bar() + ggtitle("Distribution of School Type in Eigth Grade and Twelfth Grade")
+
+#creating a bargraph that shows the breakdown of individuals who went to a certain type of school high school program depending on geographic region
+ggplot(nels,aes(`Type of High School Program`,fill = `Geographic Region of School`)) + geom_bar() + ggtitle("Distribution of School Type by Geographic Region")
+
+#create a 2x2 table for the subset
+scheh <- table(nels$`Type of High School Program`,nels$`School Type in Eighth Grade`)
+addmargins(scheh)
+round(100*prop.table(scheh,1))
+
+scheh2 <- table(nels$`Geographic Region of School`,nels$`Type of High School Program`)
+print(scheh2)
+addmargins(scheh2)
+round(100*prop.table(scheh2,2))
+
+```
+
+I will be analyzing my twelfth variable, which is the frequency individuals who took an advanced program after taking advanced math in eighth grade. To do this, I will be creating separate graphs for advanced math and advanced programming and a graph that shows the divide of advanced programming who took an advanced program.
+```{r}
+#checking if the variable data has any values that are not related to the data
+col_apadm <- nels$`Advanced Placement Program Taken?`
+missing_apadm <- c()
+approve_apadm <- c()
+
+for(col in seq_along(col_apadm)){
+  is_missing <- col_apadm[col] == "Missing"
+  is_none <- col_apadm[col] == "None"
+  is_num <- col_apadm[col] == "8.0"
+  if(is.na(col_apadm[col]) || is_missing == TRUE || is_none == TRUE || is_num == TRUE){
+    missing_apadm <- c(missing_apadm, "YES")
+  }
+  else{
+    approve_apadm <- c(approve_apadm, "NO")
+  }
+}
+
+length(missing_apadm)
+length(approve_apadm)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+apadm <- nels%>%
+            select(`Case Number`, `Advanced Placement Program Taken?`, `Advanced Math Taken in Eighth Grade`) %>%
+            filter(`Advanced Placement Program Taken?` != "8.0") %>%
+            filter(`Advanced Math Taken in Eighth Grade` != "Missing")
+print(apadm)
+
+#creating a bargraph to see if individuals took advanced math in eighth grade
+ggplot(apadm,aes(`Advanced Math Taken in Eighth Grade`)) + geom_bar(colour = "white", fill = "navy") + ggtitle("Count of Those who took Advanced Math in Eighth Grade")
+
+ggplot(apadm,aes(`Advanced Placement Program Taken?`)) + geom_bar(colour = "white", fill = "lightslateblue") + ggtitle("Count of Those who took Advanced Math in Twelfth Grade")
+
+#creating a bar graph that also shows the breakdown of individuals who had taken advanced math in eighth grade also taking AP courses
+ggplot(apadm,aes(`Advanced Placement Program Taken?`, fill = `Advanced Math Taken in Eighth Grade`)) + geom_bar() + ggtitle("Distribution of those who took Advanced Math Previously onto Current Enrollment")
+
+#presenting the summary statistics
+summary_adm8 <- apadm %>%
+  group_by(`Advanced Math Taken in Eighth Grade`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_adm8)
+
+summary_ap12 <- apadm %>%
+  group_by(`Advanced Placement Program Taken?`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_ap12)
+
+#create a 2x2 table for the subset
+admap <- table(apadm$`Advanced Placement Program Taken?`,apadm$`Advanced Math Taken in Eighth Grade`)
+addmargins(admap)
+round(100*prop.table(admap,1))
+```
+
+
