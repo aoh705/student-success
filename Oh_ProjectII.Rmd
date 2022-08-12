@@ -1,0 +1,235 @@
+---
+title: "Oh_ProjectII"
+author: "A.Oh"
+date: '2022-04-05'
+output: html_document
+---
+Purpose of my Project Part II:
+The purpose of my project part II is to draw statistical analysis from the summary statistics I have extracted in Part 1 through comparisons of means t-test, chi squared test of proportions, and linear regression, as well as answer the question: what makes an academically successful student/individual?
+
+Calling all dataframes created in part I of the project:
+```{r}
+#also installing packages I need for part II of the project
+library("readxl")
+library(tidyverse)
+library(ggplot2)
+library(magrittr)
+library(dplyr)
+
+#dataframe outlining individuals and their corresponding socioeconomic statuses
+socecon <- read.csv('Data/socecon.csv')
+head(socecon)
+
+#dataframe outlining family sizes
+famsize <- read.csv('Data/famsize.csv')
+head(famsize)
+
+#dataframe outlining the socioeconomic status, family size, and urbanicity
+sesfams <- read.csv('Data/sesfams.csv')
+head(sesfams)
+
+#dataframe outlining the time students work on homework outside of school on average weekly
+hwtime <- read.csv('Data/hwtime.csv')
+head(hwtime)
+
+#dataframe below outline the achievements in each subjects for each student
+reading <- read.csv('Data/table_reading.csv')
+math <- read.csv('Data/table_math.csv')
+science <- read.csv('Data/table_science.csv')
+socials <- read.csv('Data/table_ss.csv')
+head(reading)
+head(math)
+head(science)
+head(socials)
+
+#dataframe outlines the grades of students in all subjects (all in one dataframe)
+grades <- read.csv('Data/table_grades.csv')
+head(grades)
+
+#dataframe outlines the grades of students and the time students take on homework outside of school
+grades_time <- read.csv('Data/grades_time.csv')
+head(grades_time)
+
+#dataframe outlining the AP courses offered for each region in America
+apf <- read.csv('Data/apf.csv')
+head(apf)
+
+#dataframe outlining the marital status of the individual's parents
+marital <- read.csv('Data/marital.csv')
+head(marital)
+
+#dataframe outlining if students had taken advanced math in eighth grade and are smoking cigarettes right now
+adsm <- read.csv('Data/marital.csv')
+head(marital)
+
+#dataframe outlining the expected income of students
+expinc <- read.csv('Data/expinc.csv')
+head(expinc)
+
+#dataframe outlining the time spent on extracurricular activities and the highest level of education students expect to achieve
+eced <- read.csv('Data/eced.csv')
+head(eced)
+
+#dataframe outlining the different types of schools attended by individuals in eighth grade and high school
+table_school <- read.csv('Data/table_school.csv')
+head(table_school)
+
+#dataframe outlining the frequency individuals who took an advanced program after taking advanced math in eighth grade
+apadm <- read.csv('Data/apadm.csv')
+head(apadm)
+
+```
+
+Calling the original nels dataset to make 2x2 count tables for each test:
+```{r}
+nels <- read_excel('Data/nels.xlsx')
+head(nels)
+```
+
+Below, I will be conducting a comparisons of means t-test for four different variables (two pairs):
+```{r}
+#first part variables will be trying to see if there is an association between the socioeconomic status and if the student takes AP classes in high school
+
+#creating a separate dataframe to get rid of inappropriate data variables from columns
+socap <- nels%>%
+            select(`Case Number`, `Socio-Economic Status`,`Advanced Placement Program Taken?`) %>%
+            filter(`Advanced Placement Program Taken?` != "8.0")
+print(socap)
+
+str(socap)
+
+socap_1 <- table(socap$`Socio-Economic Status`,socap$`Advanced Placement Program Taken?`)
+addmargins(socap_1)
+
+#creating boxplot to compare spread
+boxplot(`Socio-Economic Status`~`Advanced Placement Program Taken?`, data=socap, main='Spread of Socioeconomic status by Advanced Placement Program Taken', xlab='Socioeconomic Status', col='purple2', ylab='AP Program Taken?',border = 'purple3', horizontal=TRUE)
+
+#conducting t-test
+t.test(`Socio-Economic Status`~`Advanced Placement Program Taken?`, data=socap, equal.var=FALSE)
+
+#second part variables will be trying to see if there is an association between expected income at 30 and whether or not the student has binged on alcohol ever
+
+#(summary plot of binging on alcohol)
+alc <- nels %>%
+        select(`Case Number`,`Binged on Alcohol Ever?`)
+print(alc)
+
+#(plot of binging on alcohol)
+ggplot(alc,aes(`Binged on Alcohol Ever?`)) + geom_bar(colour = "white", fill = "pink") + ggtitle("Whether or not Student has Binged on Alcohol")
+
+#percentage dataframe for alcohol
+summary_alc <- alc %>%
+  group_by(alc$`Binged on Alcohol Ever?`) %>%
+  summarise(cnt = n()) %>%
+  mutate(freq = formattable::percent(cnt / sum(cnt))) %>% 
+  arrange(desc(freq))
+
+print(summary_alc)
+
+#printing the dataframe expected to reference
+print(expinc)
+
+expinc_1 <- table(expinc$no_outlier_expected_income_30,expinc$new_alc)
+addmargins(expinc_1)
+
+#creating boxplot to compare spread
+boxplot(no_outlier_expected_income_30~new_alc, data=expinc, main='Spread of Expected Income by age 30 by Alcohol Binging', xlab='Expected Income', col='blue2', ylab='Binging on Alcohol?',border = 'blue3', horizontal=TRUE)
+
+#conducting t-test
+t.test(no_outlier_expected_income_30~new_alc, data=expinc, equal.var=FALSE)
+
+```
+
+
+Below, I will be conducting a chi-squared test for proportions for six variables (three pairs):
+```{r}
+#first part variables are trying to see if there is an association between the education achievements in students who took AP classes and taking advanced math in eighth grade
+
+#the 2x2 subset table
+admap <- table(apadm$Advanced.Placement.Program.Taken.,apadm$Advanced.Math.Taken.in.Eighth.Grade)
+print(admap)
+addmargins(admap)
+
+#displaying the dataframe for this test
+print(apadm)
+
+#performing the chi-squared test
+chisq.test(apadm$Advanced.Placement.Program.Taken.,apadm$Advanced.Math.Taken.in.Eighth.Grade)
+
+#second part variables are trying to see if there is an association between weekly time spent on homework outside of school and expected highest level of education achieved
+
+#the 2x2 table for hwtime and highest level of education achieved
+hwtime_ed <- table(nels$`Time Spent on Homework out of School per Week in Twelfth Grade`,nels$`Highest level of education expected`)
+addmargins(hwtime_ed)
+
+#performing the chi-squared test
+chisq.test(nels$`Time Spent on Homework out of School per Week in Twelfth Grade`,nels$`Highest level of education expected`)
+
+#third part variables are trying to see if there is an association between highest level of education expected to achieve and urbanicity of students
+
+#the 2x2 table for highest level of education and urbanicity of students
+ed_urban <- table(nels$`Highest level of education expected`,nels$Urbanicity)
+addmargins(ed_urban)
+
+#performing the chi-squared test
+chisq.test(nels$`Highest level of education expected`,nels$Urbanicity)
+
+```
+Below, I will be conducting a linear regression for two variables:
+```{r}
+#first part variables will be trying to see if there is an association between socioeconomic status and expected income at age 30
+socecon_inc <- data.frame(expinc$no_outlier_case_num,expinc$no_outlier_expected_income_30,expinc$new_socecon)
+head(socecon_inc)
+
+socecon_exp <- data.frame(socecon,nels$`Expected income at age 30`)
+head(socecon_exp)
+
+#create a scatterplot for expected income with socioeconomic status
+ggplot(data=socecon_exp) + geom_point(mapping = aes(x = Socio.Economic.Status , y = nels..Expected.income.at.age.30.)) + ggtitle("Socioeconomic status and Expected Income at 30") + xlab("Socioeconomic status")+ ylab("Expected Income at 30")
+
+#(without outliers)
+ggplot(data=socecon_inc) + geom_point(mapping = aes(x = expinc.new_socecon , y = expinc.no_outlier_expected_income_30)) + ggtitle("Socioeconomic status and Expected Income at 30") + xlab("Socioeconomic status")+ ylab("Expected Income at 30")
+
+#correlation between expected income and socioeconomic status
+corr_socinc <- cor(socecon_inc$expinc.new_socecon,socecon_inc$expinc.no_outlier_expected_income_30)
+print(corr_socinc)
+
+r_sq <- corr_socinc^2
+print(r_sq)
+
+#plot the linear regression line on the scatterplot
+ggplot(data=socecon_inc, aes(x = expinc.new_socecon , y = expinc.no_outlier_expected_income_30)) + geom_point() + geom_smooth(method="lm") + ggtitle("Socioeconomic status and Expected Income at 30") + xlab("Socioeconomic status")+ ylab("Expected Income at 30")
+
+#finding lm model
+socecon_inc_model <- lm(expinc.new_socecon~expinc.no_outlier_expected_income_30, data = socecon_inc)
+print(socecon_inc_model)
+
+#finding the residuals and plotting them
+residuals <- resid(socecon_inc_model)
+print(residuals)
+
+hist(residuals) #(histogram of the residuals)
+
+qqnorm(residuals) #plotting the normal probability plot of the residuals
+
+plot(fitted(socecon_inc_model),residuals)#creating a residual plot
+
+std_res <- rstandard(socecon_inc_model)
+print(std_res) #calculating standards residuals
+
+plot(fitted(socecon_inc_model),std_res) #plot of standardized residual plot
+
+#Combining regression with standard residuals
+socecon_expinc <- socecon_inc[c("expinc.new_socecon", "expinc.no_outlier_expected_income_30")]
+soc_inc_std <- cbind(socecon_expinc, std_res)
+print(soc_inc_std)
+
+#Removing standard residuals that are greater than 2
+socecon_inc_analysis <- soc_inc_std[soc_inc_std$std_res < 2,]
+print(socecon_inc_analysis)
+
+#results of the linear regression
+summary(lm(expinc.new_socecon~expinc.no_outlier_expected_income_30, data = socecon_inc))
+
+```
+
