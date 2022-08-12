@@ -1,0 +1,138 @@
+---
+title: "Project_DF"
+author: "A.Oh"
+date: '2022-04-28'
+output: html_document
+---
+Dataframes of Project Part I:
+```{r}
+#installing packages
+library("readxl")
+library(tidyverse)
+library(ggplot2)
+library(magrittr)
+library(dplyr)
+
+?write.csv
+
+nels <- read_excel('Data/NELS.xlsx')
+
+#creating a table for socioeconomic status of each individual
+table_socecon <- nels[,c("Case Number", "Socio-Economic Status")]
+print(table_socecon)
+
+write.csv(table_socecon,"socecon.csv",row.names = FALSE)
+
+#creating a table for family size of each individual
+famsize <- nels%>%
+            select(`Case Number`,`Family Size`)
+print(famsize)
+
+write.csv(famsize,"famsize.csv",row.names = FALSE)
+
+#creating a table for family size, socioeconomic status, and urbanicity of each individual
+table_sesfams <- nels[,c("Case Number","Family Size","Socio-Economic Status","Urbanicity")]
+print(table_sesfams)
+
+write.csv(table_sesfams,"sesfams.csv",row.names = FALSE)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+hwtime <- nels%>%
+            select(`Case Number`,`Time Spent on Homework out of School per Week in Twelfth Grade`) %>%
+            filter(`Time Spent on Homework out of School per Week in Twelfth Grade` != "None")
+print(hwtime)
+
+write.csv(hwtime,"hwtime.csv",row.names = FALSE)
+
+#creating a table for grade of each subject of each individual in twelfth grade
+table_reading <- nels[,c("Case Number", "Reading Achievement in Twelfth Grade")]
+table_math <- nels[,c("Case Number", "Math Achievement in Twelfth Grade")]
+table_science <- nels[,c("Case Number", "Science Achievement in Twelfth Grade")]
+table_ss <- nels[,c("Case Number", "Social Studies Achievement in Twelfth Grade")]
+
+write.csv(table_reading,"table_reading.csv",row.names = FALSE)
+write.csv(table_math,"table_math.csv",row.names = FALSE)
+write.csv(table_science,"table_science.csv",row.names = FALSE)
+write.csv(table_ss,"table_ss.csv",row.names = FALSE)
+
+#creating table with all the grades
+table_grades <- nels[,c("Case Number","Time Spent on Homework out of School per Week in Twelfth Grade","Reading Achievement in Twelfth Grade","Math Achievement in Twelfth Grade","Science Achievement in Twelfth Grade","Social Studies Achievement in Twelfth Grade")]
+print(table_grades)
+
+write.csv(table_grades,"table_grades.csv",row.names = FALSE)
+
+#create a separate subset table for all columns studied here
+grades_time <- nels%>%
+            select(`Case Number`,`Time Spent on Homework out of School per Week in Twelfth Grade`,`Reading Achievement in Twelfth Grade`,`Math Achievement in Twelfth Grade`,`Science Achievement in Twelfth Grade`,`Social Studies Achievement in Twelfth Grade`) %>%
+            filter(`Time Spent on Homework out of School per Week in Twelfth Grade` != "None")
+print(grades_time)
+
+write.csv(grades_time,"grades_time.csv",row.names = FALSE)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+apf <- nels%>%
+            select(`Case Number`,`Number of Advanced Placement Courses Offered by School`,`Geographic Region of School`,Urbanicity) %>%
+            filter(`Number of Advanced Placement Courses Offered by School` != "Missing")
+print(apf)
+
+write.csv(apf,"apf.csv",row.names = FALSE)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+marital <- nels%>%
+            select(`Case Number`,`Parents' Marital Status in Eighth Grade`, `Number of Times Missed School in Twelfth Grade`) %>%
+            filter(`Parents' Marital Status in Eighth Grade` != "98.0")
+print(marital)
+
+write.csv(marital,"marital.csv",row.names = FALSE)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+adsm <- nels%>%
+            select(`Case Number`,`Advanced Math Taken in Eighth Grade`, `Smoked Cigarettes Ever?`) %>%
+            filter(`Advanced Math Taken in Eighth Grade` != "Missing")
+print(adsm)
+
+write.csv(adsm,"adsm.csv",row.names = FALSE)
+
+#creating a new dataframe/subset table for expected income
+nels_expinc <- data.frame(nels$`Case Number`, nels$`Expected income at age 30`)
+print(nels_expinc)
+
+write.csv(nels_expinc,"nels_expinc.csv",row.names = FALSE)
+
+#(no outliers)
+new_nels <- data.frame(no_outlier_case_num,no_outlier_expected_income_30,no_outlier_highed,new_socecon,new_alc)
+head(new_nels)
+
+write.csv(new_nels,"expinc.csv",row.names = FALSE)
+
+#create a subset of data for the highest level of education expected using built-in R function
+table_ed <- nels[,c("Case Number","Highest level of education expected")]
+print(table_ed)
+
+write.csv(table_ed,"table_ed.csv",row.names = FALSE)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+eced <- nels%>%
+            select(`Case Number`,`Time Spent Weekly on Extra-Curricular Activities in Twelfth Grade`, `Highest level of education expected`) %>%
+            filter(`Time Spent Weekly on Extra-Curricular Activities in Twelfth Grade` != "None")
+print(eced)
+
+write.csv(eced,"eced.csv",row.names = FALSE)
+
+#create a subset of data using built-in R function
+table_school <- nels[,c("Case Number","Type of High School Program","School Type in Eighth Grade")]
+print(table_school)
+
+write.csv(table_school,"table_school.csv",row.names = FALSE)
+
+#use the functions part of the maggritr package to filter out any rows that have data unrelelvant to the column data
+apadm <- nels%>%
+            select(`Case Number`, `Advanced Placement Program Taken?`, `Advanced Math Taken in Eighth Grade`) %>%
+            filter(`Advanced Placement Program Taken?` != "8.0") %>%
+            filter(`Advanced Math Taken in Eighth Grade` != "Missing")
+print(apadm)
+
+write.csv(apadm,"apadm.csv",row.names = FALSE)
+
+```
+
